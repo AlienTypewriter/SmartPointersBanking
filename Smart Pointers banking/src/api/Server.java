@@ -1,11 +1,11 @@
 package api;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.security.InvalidKeyException;
-import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -17,21 +17,24 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.DESedeKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class Server {
+	public static final String MAC_KEY = "87h1287fhe8f7y01";
+	public static final String MSG_KEY = "1023ofjea9hasn81";
 	private static Connection con;
 	private static boolean keepConnections = true;
 	private static Mac hash;
 	private static ServerSocket server;
-	public static void main(String[] args) throws NoSuchAlgorithmException {
+	public static void main(String[] args) throws NoSuchAlgorithmException, IOException {
 		if (args.length<2) {
 			System.out.println("This is a server application for the Smart Pointers banking project.\n"
 					+ "Enter database credentials to proceed");
 			return;
 		}
+		File errorLog = new File("error_log.txt");
+		PrintStream logWriter = new PrintStream(errorLog);
+		System.setErr(logWriter);
 		Properties dbsprops = new Properties();
 		dbsprops.setProperty("user", args[0]);
 		dbsprops.setProperty("password", args[1]);
@@ -39,7 +42,7 @@ public class Server {
 		try {
 			con = DriverManager.getConnection("jdbc:postgresql://localhost/banking", dbsprops);
 			System.out.println("Connected to database. Establishing server");
-			SecretKeySpec keyfac = new SecretKeySpec("87h1287fhe8f7y01hcy1264dc184e6a4c6824e".getBytes(), "AES");
+			SecretKeySpec keyfac = new SecretKeySpec(MAC_KEY.getBytes(), "AES");
 			hash = Mac.getInstance("HmacSHA512");
 			hash.init(keyfac);
 			server = new ServerSocket(8000);
