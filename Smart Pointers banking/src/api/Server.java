@@ -73,4 +73,8 @@ public class Server {
 	public static Mac getMac() {
 		return hash;
 	}
+	
+	public static void setMac(Mac hash) {
+		Server.hash=hash;
+	}
 }

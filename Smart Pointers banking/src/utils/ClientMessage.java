@@ -23,10 +23,10 @@ public class ClientMessage {
 	public ClientMessage(byte[] inc_message, InetAddress address) throws SecurityException {
 		ByteBuffer wrapper = ByteBuffer.wrap(Encryption.decrypt(inc_message));
 		byte[] src = new byte[wrapper.getInt()];
-		byte[] newCheck = Server.getMac().doFinal(src);
 		byte[] transCheck = new byte[wrapper.capacity()-src.length-4];
 		wrapper.get(src).get(transCheck);
-		String json = "";
+		byte[] newCheck = Server.getMac().doFinal(src);
+		json = "";
 		if (Arrays.equals(newCheck,transCheck)) {
 			try {
 				json = new String(src,"UTF-8");
@@ -46,7 +46,9 @@ public class ClientMessage {
 		if (obj.containsKey("pin")) {
 			pin = obj.getString("pin");		
 		}
-		action = (byte) obj.getInt("action");
+		if (obj.containsKey("action")) {
+			action = (byte) obj.getInt("action");
+		}
 	}
 	
 	public byte getAction() {

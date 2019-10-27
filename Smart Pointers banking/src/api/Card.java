@@ -12,9 +12,9 @@ public class Card {
 		try {
 			Server.getConnection().beginRequest();
 			Statement st = Server.getConnection().createStatement();
-			st.execute("SELECT active,pin FROM Cards WHERE card_number="+number);
+			st.execute("SELECT active,pin FROM Cards WHERE card_number='"+number+"'");
 			ResultSet res = st.getResultSet();
-			if (!res.getBoolean("active")) {
+			if (!res.next()||!res.getBoolean("active")) {
 				throw new IncorrectUserDataException("This card is deactivated or does not belong to this bank");
 			} else if (!res.getString("pin").equals(pin)) {
 				throw new IncorrectUserDataException("The pin code entered is incorrect");				
@@ -30,7 +30,7 @@ public class Card {
 		try {
 			Server.getConnection().beginRequest();
 			Statement st = Server.getConnection().createStatement();
-			st.execute("SELECT balance FROM Cards WHERE card_number="+number);
+			st.execute("SELECT balance FROM Cards WHERE card_number='"+number+"'");
 			ResultSet res = st.getResultSet();
 			if (res.getDouble("balance")<amount) {
 				throw new IncorrectUserDataException("You do not have enough money to complete this transfer");
@@ -40,8 +40,8 @@ public class Card {
 			if (!res.getBoolean("active")) {
 				throw new IncorrectUserDataException("The entered card is deactivated or does not belong to this bank");				
 			}
-			st.addBatch("UPDATE Cards SET balance=balance-"+amount+" WHERE card_number="+number);
-			st.addBatch("UPDATE Cards SET balance=balance+"+amount+" WHERE card_number="+cardNumber);
+			st.addBatch("UPDATE Cards SET balance=balance-"+amount+" WHERE card_number='"+number+"'");
+			st.addBatch("UPDATE Cards SET balance=balance+"+amount+" WHERE card_number='"+cardNumber+"'");
 			st.executeBatch();
 			Server.getConnection().endRequest();
 		} catch (SQLException e) {
@@ -53,12 +53,12 @@ public class Card {
 		try {
 			Server.getConnection().beginRequest();
 			Statement st = Server.getConnection().createStatement();
-			st.execute("SELECT balance FROM Cards WHERE card_number="+number);
+			st.execute("SELECT balance FROM Cards WHERE card_number='"+number+"'");
 			ResultSet res = st.getResultSet();
 			if (res.getDouble("balance")+amount<0) {
 				throw new IncorrectUserDataException("You do not have enough money to complete this withdrawal");
 			}
-			st.execute("UPDATE Cards SET balance=balance+"+amount+" WHERE card_number="+number);
+			st.execute("UPDATE Cards SET balance=balance+"+amount+" WHERE card_number='"+number+"'");
 			Server.getConnection().endRequest();
 		} catch (SQLException e) {
 			e.printStackTrace();

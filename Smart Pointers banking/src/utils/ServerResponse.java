@@ -18,8 +18,11 @@ public class ServerResponse {
 	public ServerResponse(boolean success, String response) {
 		StringWriter s = new StringWriter();
 		JsonGenerator gen = Json.createGenerator(s);
+		gen.writeStartObject();
 		gen.write("success", success);
 		gen.write("response",response);
+		gen.writeEnd();
+		gen.close();
 		json = s.toString();
 	}
 	
