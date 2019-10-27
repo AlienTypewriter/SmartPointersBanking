@@ -5,10 +5,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-import utils.Encryption;
+import exceptions.IncorrectUserDataException;
+import exceptions.SecurityException;
+import utils.ClientMessage;
+import utils.ServerResponse;
 
 public class ServerWorker implements Runnable{
 	private Socket client;
@@ -19,33 +22,54 @@ public class ServerWorker implements Runnable{
 
 	@Override
 	public void run() {
+		DataOutputStream out = null;
 		try {
 			InputStream in = client.getInputStream();
-			DataOutputStream out = new DataOutputStream(client.getOutputStream());
+			out = new DataOutputStream(client.getOutputStream());
 			boolean auth = checkAuth(client.getInetAddress());
 			if (!auth) {
-				//TODO implement authorization of new ATMs
+				Server.getConnection().beginRequest();
+				Statement st = Server.getConnection().createStatement();
+				st.execute("INSERT INTO ATMs (ip_address) VALUES ("+client.getInetAddress()+")");
 			}
 			while (active) {
-				in.wait();
-				ByteBuffer message = ByteBuffer.wrap(Encryption.decrypt(in.readAllBytes()));
-				int length = message.getInt();
-				byte[] infoAndCheck = new byte[message.capacity()-4];
-				message.get(infoAndCheck);
-				byte[] newCheck = Server.getMac().doFinal(Arrays.copyOf(message.array(), length+4));
-				byte[] transCheck = Arrays.copyOfRange(message.array(), length+4, message.capacity());
-				String info;
-				if (Arrays.equals(newCheck,transCheck)) {
-					info = new String(Arrays.copyOf(infoAndCheck, length));
-				} else {
-					throw new SecurityException("Invalid MAC on response from address "+client.getInetAddress());
+				if (in.available()==0) {
+					in.wait();					
 				}
-				//TODO implement actual command handling based on the info contained within the message
+				ClientMessage received = new ClientMessage(in.readAllBytes(),client.getInetAddress());
+				Card currentCard = null;
+				ServerResponse s = null;
+				switch (received.getAction()) {
+				case 0:
+					currentCard = new Card(received.getCardNumber(),received.getPin());
+					s = new ServerResponse(true,"Authorization successful.");
+				case 1:
+					currentCard.transfer(received.getCardNumber(),received.getAmount());
+					s = new ServerResponse(true,"Transfer complete.");
+				case 2:
+					currentCard.changeAmount(-received.getAmount());
+					s = new ServerResponse(true,"Withdrawal complete. Call our supports if you did not receive the money.");
+				case 3:
+					currentCard.changeAmount(received.getAmount());
+					s = new ServerResponse(true,"Deposit complete. Your money will appear in your account soon.");
+				}
+				s.writeToStream(out);
 			}
 			client.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (IncorrectUserDataException e) {
+			ServerResponse f = new ServerResponse(false,e.getMessage());
+			try {
+				f.writeToStream(out);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
