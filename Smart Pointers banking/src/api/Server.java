@@ -22,7 +22,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class Server {
 	public static final String MAC_KEY = "87h1287fhe8f7y01";
 	public static final String MSG_KEY = "1023ofjea9hasn81";
-	private static Connection con;
+	private static Connection DBConnection;
 	private static boolean keepConnections = true;
 	private static Mac hash;
 	private static ServerSocket server;
@@ -38,9 +38,9 @@ public class Server {
 		Properties dbsprops = new Properties();
 		dbsprops.setProperty("user", args[0]);
 		dbsprops.setProperty("password", args[1]);
-		dbsprops.setProperty("ssl", "false");
+		dbsprops.setProperty("ssl", "true");
 		try {
-			con = DriverManager.getConnection("jdbc:postgresql://localhost/banking", dbsprops);
+			DBConnection = DriverManager.getConnection("jdbc:postgresql://localhost/banking", dbsprops);
 			System.out.println("Connected to database. Establishing server");
 			SecretKeySpec keyfac = new SecretKeySpec(MAC_KEY.getBytes(), "AES");
 			hash = Mac.getInstance("HmacSHA512");
@@ -67,13 +67,14 @@ public class Server {
 	}
 	
 	public static Connection getConnection() {
-		return con;
+		return DBConnection;
 	}
 	
 	public static Mac getMac() {
 		return hash;
 	}
 	
+	//DEBUG only
 	public static void setMac(Mac hash) {
 		Server.hash=hash;
 	}

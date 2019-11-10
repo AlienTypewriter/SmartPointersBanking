@@ -27,7 +27,7 @@ public class ServerResponse {
 	}
 	
 	//encode the contents of the message and write them into a stream
-	public void writeToStream(OutputStream out) throws IOException {
+	public void writeToStream(OutputStream out,String spec) throws IOException {
 		byte[] data = null;
 		try {
 			data = json.getBytes("UTF-8");
@@ -37,7 +37,7 @@ public class ServerResponse {
 		byte[] maccheck = Server.getMac().doFinal(data);
 		ByteBuffer wrapper = ByteBuffer.allocate(data.length+maccheck.length+4);
 		wrapper.putInt(data.length).put(data).put(maccheck);
-		out.write(Encryption.encrypt(wrapper.array()));
+		out.write(Encryption.encrypt(wrapper.array(),spec));
 	}
 	
 	@Override

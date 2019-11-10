@@ -15,11 +15,11 @@ import javax.crypto.spec.SecretKeySpec;
 import api.Server;
 
 public abstract class Encryption {
-	public static byte[] encrypt(byte[] source) {
+	public static byte[] encrypt(byte[] source, String spec) {
 		try {
-			Cipher c = Cipher.getInstance("AES/OFB/NoPadding");
-			SecretKeySpec key = new SecretKeySpec(Server.MSG_KEY.getBytes("UTF-8"),"AES");
-			c.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(new byte[16]));
+			Cipher c = Cipher.getInstance("AES");
+			SecretKeySpec key = new SecretKeySpec(spec.getBytes("UTF-8"),"AES");
+			c.init(Cipher.ENCRYPT_MODE, key);
 			return c.doFinal(source);
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
 			e.printStackTrace();
@@ -31,17 +31,15 @@ public abstract class Encryption {
 			e.printStackTrace();
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
-		} catch (InvalidAlgorithmParameterException e) {
-			e.printStackTrace();
 		}
 		return null;
 	}
 	
-	public static byte[] decrypt(byte[] to_decrypt) {
+	public static byte[] decrypt(byte[] to_decrypt, String spec) {
 		try {
-			Cipher c = Cipher.getInstance("AES/OFB/NoPadding");
-			SecretKeySpec key = new SecretKeySpec(Server.MSG_KEY.getBytes("UTF-8"),"AES");
-			c.init(Cipher.DECRYPT_MODE, key,new IvParameterSpec(new byte[16]));
+			Cipher c = Cipher.getInstance("AES");
+			SecretKeySpec key = new SecretKeySpec(spec.getBytes("UTF-8"),"AES");
+			c.init(Cipher.DECRYPT_MODE, key);
 			return c.doFinal(to_decrypt);
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
 			e.printStackTrace();
@@ -52,8 +50,6 @@ public abstract class Encryption {
 		} catch (BadPaddingException e) {
 			e.printStackTrace();
 		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (InvalidAlgorithmParameterException e) {
 			e.printStackTrace();
 		}
 		return null;

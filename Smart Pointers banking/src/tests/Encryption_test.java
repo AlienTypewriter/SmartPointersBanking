@@ -22,16 +22,16 @@ class Encryption_test {
 
 	@Test
 	void testDeencryption() throws UnsupportedEncodingException {
-		byte[] abc123 = Encryption.encrypt("abc123".getBytes("UTF-8"));
-		byte[] decrypted = Encryption.decrypt(abc123);
+		byte[] abc123 = Encryption.encrypt("abc123".getBytes("UTF-8"),Server.MSG_KEY);
+		byte[] decrypted = Encryption.decrypt(abc123,Server.MSG_KEY);
 		byte[] original = "abc123".getBytes("UTF-8");
 		assert(Arrays.equals(decrypted, original));
 	}
 	
 	@Test
 	void testFalseDeencryption() throws UnsupportedEncodingException {
-		byte[] abc123 = Encryption.encrypt("abc123".getBytes("UTF-8"));
-		byte[] decrypted = Encryption.decrypt(abc123);
+		byte[] abc123 = Encryption.encrypt("abc123".getBytes("UTF-8"),Server.MSG_KEY);
+		byte[] decrypted = Encryption.decrypt(abc123,Server.MSG_KEY);
 		byte[] not_original = "abc1234".getBytes("UTF-8");
 		assumeFalse(Arrays.equals(decrypted, not_original));
 	}
@@ -44,8 +44,8 @@ class Encryption_test {
 		ByteBuffer bb = ByteBuffer.allocate(original.length+4).putInt(original.length).put(original);
 		byte[] maccheck = hash.doFinal(bb.array());
 		bb = ByteBuffer.allocate(original.length+4+maccheck.length).put(bb.array()).put(maccheck);
-		byte[] encrypted = Encryption.encrypt(bb.array());
-		ByteBuffer bb1 = ByteBuffer.wrap(Encryption.decrypt(encrypted));
+		byte[] encrypted = Encryption.encrypt(bb.array(),Server.MSG_KEY);
+		ByteBuffer bb1 = ByteBuffer.wrap(Encryption.decrypt(encrypted,Server.MSG_KEY));
 		int og_length = bb1.getInt();
 		assert(og_length==original.length);
 		byte[] retr = new byte[og_length];
@@ -61,8 +61,8 @@ class Encryption_test {
 		ByteBuffer bb = ByteBuffer.allocate(original.length+4).putInt(original.length).put(original);
 		byte[] maccheck = hash.digest(bb.array());
 		bb = ByteBuffer.allocate(original.length+4+maccheck.length).put(bb.array()).put(maccheck);
-		byte[] encrypted = Encryption.encrypt(bb.array());
-		ByteBuffer bb1 = ByteBuffer.wrap(Encryption.decrypt(encrypted));
+		byte[] encrypted = Encryption.encrypt(bb.array(),Server.MSG_KEY);
+		ByteBuffer bb1 = ByteBuffer.wrap(Encryption.decrypt(encrypted,Server.MSG_KEY));
 		int og_length = bb1.getInt();
 		assert(og_length==original.length);
 		byte[] retr = new byte[og_length];

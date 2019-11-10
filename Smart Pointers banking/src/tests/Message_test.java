@@ -39,7 +39,8 @@ class Message_test {
 		byte[] check = hash.doFinal(to_enc);
 		ByteBuffer wrap = ByteBuffer.allocate(to_enc.length+4+check.length);
 		wrap.putInt(to_enc.length).put(to_enc).put(check);
-		ClientMessage msg = new ClientMessage(Encryption.encrypt(wrap.array()),InetAddress.getLocalHost());
+		ClientMessage msg = new ClientMessage(Encryption.encrypt(wrap.array(),Server.MSG_KEY),
+				InetAddress.getLocalHost(),Server.MSG_KEY);
 		System.out.println(msg.toString());
 		assert(msg.getCardNumber().contentEquals("5375414107745597"));
 		assert(msg.getAction()==0);
