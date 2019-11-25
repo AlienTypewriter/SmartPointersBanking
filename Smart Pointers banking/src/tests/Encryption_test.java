@@ -3,12 +3,20 @@ package tests;
 import static org.junit.Assume.assumeFalse;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
 
+import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -26,6 +34,22 @@ class Encryption_test {
 		byte[] decrypted = Encryption.decrypt(abc123,Server.MSG_KEY);
 		byte[] original = "abc123".getBytes("UTF-8");
 		assert(Arrays.equals(decrypted, original));
+	}
+	
+	@Test
+	void testPEncryption() throws GeneralSecurityException {
+		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+		KeyPair keys = keygen.generateKeyPair();
+		RSAPublicKeySpec pks = KeyFactory.getInstance("RSA").getKeySpec(keys.getPublic(), 
+				RSAPublicKeySpec.class);
+		KeyFactory fac = KeyFactory.getInstance("RSA");
+		PublicKey key = fac.generatePublic(new RSAPublicKeySpec(pks.getModulus(),pks.getPublicExponent()));
+		byte[] abc123 = "abc123".getBytes();
+		Cipher c = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+		c.init(Cipher.ENCRYPT_MODE, key);
+		byte[] enc = c.doFinal(abc123);
+		c.init(Cipher.DECRYPT_MODE, keys.getPrivate());
+		assert(Arrays.equals(abc123,c.doFinal(enc)));
 	}
 	
 	@Test

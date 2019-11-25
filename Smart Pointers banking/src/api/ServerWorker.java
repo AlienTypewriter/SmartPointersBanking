@@ -10,18 +10,18 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.UUID;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
 
 import exceptions.IncorrectUserDataException;
 import exceptions.SecurityException;
@@ -46,31 +46,31 @@ public class ServerWorker implements Runnable{
 			InputStream in = clientSocket.getInputStream();
 			out = new DataOutputStream(clientSocket.getOutputStream());
 			boolean auth = checkRegistered(clientSocket.getInetAddress());
+			if (auth) new ServerResponse(true,"ATM registered").writeToStream(out, Server.MSG_KEY);
 			while (!auth) {
 				new ServerResponse(false,"Not authorized").writeToStream(out, Server.MSG_KEY);
-				byte[] data = new byte[2116];
+				byte[] data = new byte[1024];
 				in.read(data);
 				data = Arrays.copyOf(data, ByteBuffer.wrap(Encryption.decrypt(data,Server.MSG_KEY)).getInt()+68);
 				ClientMessage cred = new ClientMessage(data,clientSocket.getInetAddress(),Server.MSG_KEY);
-				if (!(cred.getKeySpec()!=null)) {
+				if (cred.getKeySpec()!=null) {
 					Cipher dec = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 					KeyFactory fac = KeyFactory.getInstance("RSA");
 					PublicKey key = fac.generatePublic(cred.getKeySpec());
 					dec.init(Cipher.ENCRYPT_MODE, key);
-					SecureRandom rng = new SecureRandom();
-					byte[] raw_server_key = new byte[128];
-					rng.nextBytes(raw_server_key);
-					byte[] enc_server_key = dec.doFinal(raw_server_key);
+					byte[] raw_server_key = Arrays.copyOf(UUID.randomUUID().toString().getBytes(), 16);
+					ByteBuffer wrapper = ByteBuffer.allocate(raw_server_key.length+68);
+					wrapper.putInt(raw_server_key.length).put(raw_server_key);
+					wrapper.put(Server.getMac().doFinal(wrapper.array()));
+					byte[] enc = dec.doFinal(wrapper.array());
+					out.write(enc);
 					currentKey = new String(raw_server_key,"UTF-8");
 					Server.getConnection().beginRequest();
-					Statement st = Server.getConnection().createStatement();
-					st.execute("INSERT INTO ATMs (key,ip_address) VALUES ("
-					+currentKey+clientSocket.getInetAddress()+")");
+					PreparedStatement st = Server.getConnection().prepareStatement("INSERT INTO ATMs (key,ip_address) VALUES (?,?)");
+					st.setString(1, currentKey);
+					st.setString(2, clientSocket.getInetAddress().toString());
+					st.execute();
 					Server.getConnection().endRequest();
-					byte[] maccheck = Server.getMac().doFinal(enc_server_key);
-					ByteBuffer wrapper = ByteBuffer.allocate(enc_server_key.length+maccheck.length+4);
-					wrapper.putInt(enc_server_key.length).put(enc_server_key).put(maccheck);
-					out.write(wrapper.array());
 					auth = true;
 				}
 			}
@@ -85,6 +85,9 @@ public class ServerWorker implements Runnable{
 					s = new ServerResponse(true,"Authorization successful.");					
 				} else {
 					switch (received.getAction()) {
+					case 0:
+						s = new ServerResponse(true,"Your card balance is "+currentCard.getBalance());
+						break;
 					case 1:
 						currentCard.transfer(received.getCardNumber(),received.getAmount());
 						s = new ServerResponse(true,"Transfer complete.");
@@ -121,13 +124,16 @@ public class ServerWorker implements Runnable{
 	private boolean checkRegistered(InetAddress inetAddress) throws SQLException {
 		Server.getConnection().beginRequest();
 		Statement st = Server.getConnection().createStatement();
-		st.execute("SELECT key FROM Cards WHERE card_number='"+inetAddress+"'");
+		st.execute("SELECT key FROM ATMs WHERE ip_address='"+inetAddress+"'");
 		ResultSet res = st.getResultSet();
-		String key = res.getString("key");
-		if (key!=null) {
-			currentKey = key;
-			return true;
-		}
+		Server.getConnection().endRequest();
+		if (res.next()) {
+			String key = res.getString("key");
+			if (key!=null) {
+				currentKey = key;
+				return true;
+			}
+		};
 		return false;
 	}
 }

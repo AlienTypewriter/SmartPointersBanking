@@ -26,6 +26,7 @@ public class Server {
 	private static boolean keepConnections = true;
 	private static Mac hash;
 	private static ServerSocket server;
+	private static ThreadPoolExecutor exec;
 	public static void main(String[] args) throws NoSuchAlgorithmException, IOException {
 		if (args.length<2) {
 			System.out.println("This is a server application for the Smart Pointers banking project.\n"
@@ -38,17 +39,17 @@ public class Server {
 		Properties dbsprops = new Properties();
 		dbsprops.setProperty("user", args[0]);
 		dbsprops.setProperty("password", args[1]);
-		dbsprops.setProperty("ssl", "true");
+		dbsprops.setProperty("ssl", "false");
 		try {
 			DBConnection = DriverManager.getConnection("jdbc:postgresql://localhost/banking", dbsprops);
 			System.out.println("Connected to database. Establishing server");
-			SecretKeySpec keyfac = new SecretKeySpec(MAC_KEY.getBytes(), "AES");
+			SecretKeySpec keyfac = new SecretKeySpec(MAC_KEY.getBytes("UTF-8"), "AES");
 			hash = Mac.getInstance("HmacSHA512");
 			hash.init(keyfac);
 			server = new ServerSocket(8000);
 			System.out.println("Server established. Awaiting connections.");
 			BlockingQueue<Runnable> workers = new SynchronousQueue<Runnable>();
-			ThreadPoolExecutor exec = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
+			exec = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
 					Integer.MAX_VALUE, 5, TimeUnit.SECONDS, workers);
 			while (keepConnections) {
 				Socket client = server.accept();
@@ -64,6 +65,12 @@ public class Server {
 		} catch (InvalidKeyException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static void stop() throws IOException {
+		exec.shutdownNow();
+		keepConnections = false;
+		server.close();
 	}
 	
 	public static Connection getConnection() {

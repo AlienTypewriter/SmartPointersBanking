@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;

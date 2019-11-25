@@ -26,7 +26,7 @@ public class ClientMessage {
 	public ClientMessage(byte[] inc_message, InetAddress address,String spec) throws SecurityException {
 		ByteBuffer wrapper = ByteBuffer.wrap(Encryption.decrypt(inc_message,spec));
 		byte[] src = new byte[wrapper.getInt()];
-		byte[] transCheck = new byte[wrapper.capacity()-src.length-4];
+		byte[] transCheck = new byte[64];
 		wrapper.get(src).get(transCheck);
 		byte[] newCheck = Server.getMac().doFinal(src);
 		json = "";
@@ -41,7 +41,7 @@ public class ClientMessage {
 		}
 		JsonObject obj = Json.createReader(new StringReader(json)).readObject();
 		if (obj.containsKey("amount")) {
-			amount = obj.getJsonNumber("amount").doubleValue();		
+			amount = Double.valueOf(obj.getString("amount"));
 		}
 		if (obj.containsKey("card_num")) {
 			card_num = obj.getString("card_num");	

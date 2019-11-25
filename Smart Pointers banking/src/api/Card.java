@@ -30,18 +30,21 @@ public class Card {
 		try {
 			Server.getConnection().beginRequest();
 			Statement st = Server.getConnection().createStatement();
-			st.execute("SELECT balance FROM Cards WHERE card_number='"+number+"'");
+			st.execute("SELECT balance::numeric FROM Cards WHERE card_number='"+number+"'");
 			ResultSet res = st.getResultSet();
+			res.next();
 			if (res.getDouble("balance")<amount) {
 				throw new IncorrectUserDataException("You do not have enough money to complete this transfer");
 			}
-			st.execute("SELECT balance,active FROM Cards WHERE card_number="+cardNumber);
+			st.execute("SELECT balance::numeric,active FROM Cards WHERE card_number='"+cardNumber+"'");
 			res = st.getResultSet();
-			if (!res.getBoolean("active")) {
+			if (!res.next()|!res.getBoolean("active")) {
 				throw new IncorrectUserDataException("The entered card is deactivated or does not belong to this bank");				
 			}
-			st.addBatch("UPDATE Cards SET balance=balance-"+amount+" WHERE card_number='"+number+"'");
-			st.addBatch("UPDATE Cards SET balance=balance+"+amount+" WHERE card_number='"+cardNumber+"'");
+			st.addBatch("UPDATE Cards SET balance=(balance::numeric-"+amount+")::money "
+					+ "WHERE card_number='"+number+"'");
+			st.addBatch("UPDATE Cards SET balance=(balance::numeric+"+amount+")::money "
+					+ "WHERE card_number='"+cardNumber+"'");
 			st.executeBatch();
 			Server.getConnection().endRequest();
 		} catch (SQLException e) {
@@ -53,15 +56,33 @@ public class Card {
 		try {
 			Server.getConnection().beginRequest();
 			Statement st = Server.getConnection().createStatement();
-			st.execute("SELECT balance FROM Cards WHERE card_number='"+number+"'");
+			st.execute("SELECT balance::numeric FROM Cards WHERE card_number='"+number+"'");
 			ResultSet res = st.getResultSet();
+			res.next();
 			if (res.getDouble("balance")+amount<0) {
 				throw new IncorrectUserDataException("You do not have enough money to complete this withdrawal");
 			}
-			st.execute("UPDATE Cards SET balance=balance+"+amount+" WHERE card_number='"+number+"'");
+			st.execute("UPDATE Cards SET balance=(balance::numeric+"+amount+")::money "
+					+ "WHERE card_number='"+number+"'");
 			Server.getConnection().endRequest();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public double getBalance() {
+		double balance = 0;
+		try {
+			Server.getConnection().beginRequest();
+			Statement st = Server.getConnection().createStatement();
+			st.execute("SELECT balance::numeric FROM Cards WHERE card_number='"+number+"'");
+			ResultSet res = st.getResultSet();
+			res.next();
+			balance = res.getDouble("balance");
+			Server.getConnection().endRequest();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return balance;
 	}
 }
