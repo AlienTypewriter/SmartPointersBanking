@@ -38,8 +38,11 @@ public class Card {
 			}
 			st.execute("SELECT balance::numeric,active FROM Cards WHERE card_number='"+cardNumber+"'");
 			res = st.getResultSet();
-			if (!res.next()|!res.getBoolean("active")) {
-				throw new IncorrectUserDataException("The entered card is deactivated or does not belong to this bank");				
+			if (!res.next()) {
+				throw new IncorrectUserDataException("The entered card does not belong to this bank");				
+			}
+			if (!res.getBoolean("active")) {
+				throw new IncorrectUserDataException("The entered card is deactivated");				
 			}
 			st.addBatch("UPDATE Cards SET balance=(balance::numeric-"+amount+")::money "
 					+ "WHERE card_number='"+number+"'");

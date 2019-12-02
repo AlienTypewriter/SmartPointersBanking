@@ -21,7 +21,6 @@ import javax.crypto.Mac;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -34,7 +33,7 @@ import utils.Encryption;
 
 @TestMethodOrder(OrderAnnotation.class)
 class Connection_test {
-	public String spec = "e64f646f-9fc0-4e";
+	public String spec = "94506a24-61b6-43";
 
 	@Test
 	@Order(2)
@@ -105,7 +104,6 @@ class Connection_test {
 				s.close();
 				assert(("M2{\"success\":true,\"response\":\"Authorization successful.\"}")
 						.contentEquals(m.toString()));
-				Server.stop();
 				System.exit(0);
 			}
 			catch (Exception e) {
@@ -151,9 +149,9 @@ class Connection_test {
 				str = new StringWriter();
 				jgen = Json.createGenerator(str);
 				jgen.writeStartObject();
-				jgen.write("action",0);
-				//jgen.write("card_num","5375414107745597");
-				//jgen.write("amount","1250");
+				jgen.write("action",1);
+				jgen.write("card_num","5375414107745597");
+				jgen.write("amount","125");
 				jgen.writeEnd();
 				jgen.close();
 				to_enc = str.toString().getBytes("UTF-8");

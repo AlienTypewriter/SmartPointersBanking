@@ -41,7 +41,7 @@ public class ClientMessage {
 		}
 		JsonObject obj = Json.createReader(new StringReader(json)).readObject();
 		if (obj.containsKey("amount")) {
-			amount = Double.valueOf(obj.getString("amount"));
+			amount = obj.getJsonNumber("amount").doubleValue();
 		}
 		if (obj.containsKey("card_num")) {
 			card_num = obj.getString("card_num");	

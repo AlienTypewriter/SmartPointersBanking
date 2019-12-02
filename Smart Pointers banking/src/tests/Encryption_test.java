@@ -3,7 +3,6 @@ package tests;
 import static org.junit.Assume.assumeFalse;
 
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;

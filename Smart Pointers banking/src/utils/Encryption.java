@@ -12,8 +12,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import api.Server;
-
 public abstract class Encryption {
 	public static byte[] encrypt(byte[] source, String spec) {
 		try {
